@@ -1,0 +1,56 @@
+{% if message %}
+<script>
+  alert("{{ message }}");
+</script>
+{% endif %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sign In</title>
+    <style>
+      body {
+        background-color: black;
+      }
+      input {
+        margin-top: 20px;
+        height: 30px;
+        padding: 12px 20px;
+        width: 150px;
+        margin: 8px 0;
+        border-radius: 5px;
+      }
+      input[type="submit"] {
+        background-color: rgba(7, 179, 185, 0.753);
+        color: rgb(255, 255, 255);
+        border: none;
+        border-radius: 5px;
+      }
+      button {
+        background-color: rgba(7, 179, 185, 0.753);
+        color: white;
+        width: 150px;
+        height: 30px;
+        border: none;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <form id="postsignIn" action="{% url 'postsignIn' %}" method="post">
+      {% csrf_token %}
+      <br />
+      <!-- Enter Your Email: -->
+      <center>
+        <label for="Email"><span style="color: white">Email</span></label>
+        <input type="email" id="Email" name="email" /><br /><br />
+      </center>
+      <center>
+        <!-- Enter Your Password: -->
+        <label for="Password"><span style="color: white">Password</span></label>
+        <input type="password" id="Password" name="pass" /><br /><br />
+      </center>
+      <center><input type="submit" value="SignIn" /><br /><br /></center>
+    </form>
+  </body>
+</html>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+{% load static %} {% load active %} {% load crispy_forms_tags %}
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
+    <!-- Facebook Cards -->
+    <meta
+      property="og:description"
+      content="A fun project to store my learning from each book that I read"
+    />
+    <meta property="og:url" content="" />
+    <meta property="og:image" content="{% static 'images/logomark.png' %}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Bookworm" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@Tanmay_juneja8" />
+    <meta name="twitter:creator" content="Tanmay Juneja" />
+
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Font -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Poppins"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"
+      integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    
+
+    <!-- JS, Popper.js, and jQuery -->
+    <script
+      src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+      integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script> 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/habibmhamadi/multi-select-tag/dist/css/multi-select-tag.css">
+    <script src="https://cdn.jsdelivr.net/gh/habibmhamadi/multi-select-tag/dist/js/multi-select-tag.js"></script>
+    <title>{% block title %}{% endblock %}</title>
+  </head>
+  <body style="font-family: 'Poppins', sans-serif">
+    {% include 'navbar.html' %}
+
+     <style>
+      .button-35 {
+  align-items: center;
+  background-color: #00000d;
+  border-radius: 15px;
+  box-shadow: transparent 0 0 0 6px, rgba(18, 18, 18, 0.4) 0 6px 20px;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 1 1 auto;
+  font-family: Inter, sans-serif;
+  font-size: 1rem;
+  font-weight:450;
+  justify-content: center;
+  line-height: 1;
+  margin: 0;
+  outline: none;
+  padding: 15px;
+  text-align: center;
+  text-decoration: none;
+  transition: box-shadow 0.2s, -webkit-box-shadow 0.2s;
+  white-space: nowrap;
+  border: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button-35:hover {
+  box-shadow: #fff 0 0 0 3px, transparent 0 0 0 0;
+  background-color: #90b89b;
+  color: #fff;
+}
+.textbox-container {
+        display: inline-block;
+        position: relative;
+        width: 50%;
+        background-color: #fff;
+        padding: 10px;
+        border: 2px solid #ccc;
+        border-radius: 8px;
+      }
+
+
+
+    </style>
+    <!-- Modal -->
+    <div
+      class="modal fade"
+      id="exampleModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document" style="max-width: 800px">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">
+              Job Description Form
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <!-- Add the form for answering questions here -->
+            <br />
+            <form action="{% url 'jd_form' %}?uid={{ uid_val }}" method="post">
+              {% csrf_token %}
+              <p>
+                <label for="company_name"
+                  >1. Please select the company categories you want to hire the candidate from. For example, "B2B", "B2C", "Fintech", etc. </label>
+                  <br />
+                 <select id="myDropdown" multiple name="myDropdown[]" placeholder="Select Company Type" data-search="false" data-silent-initial-value-set="true">
+</select>
+
+              </p>
+              <br />
+              <p>
+                <label for="job_title"
+                  >2. What is the job title you are looking
+                  for?</label>
+                <br />
+                <input
+                  type="text"
+                  id="job_title"
+                  name="job_title"
+                  list="job_skill_options"
+                  placeholder = "Business Analyst"
+                  required
+                />
+                <datalist id="job_skill_options"></datalist>
+              </p>
+              
+<script type="text/javascript">
+
+                // Load your list of job skills into a JavaScript array
+                var myArray = ['Accounting & Auditing', 'Advertising / PR / Events', 'Agriculture', 'Agro Chemicals', 'Airlines / Aviation / Aerospace', 'Analytics & KPO', 'Animation & VFX', 'Architecture & Interior Design', 'Auto Components', 'Automobile', 'Aviation', 'B2B', 'B2C', 'BPO', 'BPO/KPO', 'Banking', 'Banking / Insurance / Accounting', 'Beauty & Personal Care', 'Beauty & Wellness', 'Beverage', 'Biotech & Life sciences', 'Biotechnology', 'Broadcasting', 'Building Material', 'Chemicals', 'Chemicals / Agri Inputs', 'Clinical Research', 'Conglomerate', 'Consulting', 'Consumer Electronics & Appliances', 'Consumer goods', 'Content Development', 'Defence & Aerospace', 'Design', 'EdTech', 'Education & Training', 'Electrical Equipment', 'Electronics', 'Electronics Manufacturing', 'Emerging Technologies', 'Engineering & Construction', 'FMCG', 'Facility Management Services', 'Fashion & Textile', 'Federal Agencies', 'FinTech', 'Financial Services', 'Fitness & Wellness', 'Food Processing', 'Forbes Global 2000', 'Former Unicorn', 'Fortune India 500', 'Furniture & Furnishing', 'Gaming', 'Government', 'Graduated Unicorn', 'Hardware & Networking', 'Healthcare', 'Healthcare / Pharma', 'Hospitality', 'IT Services & Consulting', 'Import & Export', 'Indian Unicorn', 'Industrial Automation', 'Industrial Machinery', 'Insurance', 'Internet', 'Investment Banking / Venture Capital / Private Equity', 'Iron & Steel', 'Jewellery', 'Law Enforcement & Security', 'Leather', 'Legal', 'Logistics', 'Logistics / Shipping', 'MNC', 'Management Consulting', 'Manufacturing', 'Marine', 'Marketing & Advertising', 'Media & Entertainment', 'Media & Entertainment / Publishing', 'Medical Equipment', 'Metals & Mining', 'NBFC', 'Non-Profit', 'Not Available', 'Oil & Gas', 'Oil / Gas / Petro Chemicals', 'Packaging', 'Petrochemicals', 'Pharma', 'Plastics / Rubber', 'Ports & Shipping', 'Power', 'Printing & Publishing', 'Printing / Packaging', 'Public', 'Pulp & Paper', 'Railways', 'Real Estate', 'Recruitment', 'Retail', 'Roads/Railways', 'Semiconductors', 'Software Product', 'Sports & Recreation', 'Sports/Fitness', 'Startup', 'Telecom', 'Travel & Tourism', 'Travel & Tourism / Hospitality', 'Urban Transport', 'Waste Management']
+
+                var dropdown = document.getElementById("myDropdown");
+                for (var i = 0; i < myArray.length; i++) {
+                    var option = document.createElement("option");
+                    option.text = myArray[i];
+                    dropdown.add(option);
+                }
+                // Get the input field and dropdown elements
+                var jobTitleInput = document.getElementById("job_title");
+                {% comment %} var jobSkillOptions =
+                  document.getElementById("job_skill_options");  {% endcomment %}
+
+                // Attach an event listener to the input field
+                jobTitleInput.addEventListener("input", function () {
+                  // Get the value of the input field
+                  var inputValue = jobTitleInput.value;
+                  // Filter the job skills based on the input value
+                  var filteredSkills = jobSkills.filter(function (jobSkill) {
+                    return jobSkill
+                      .toLowerCase()
+                      .startsWith(inputValue.toLowerCase());
+                  });
+
+                  // Sort the filtered job skills alphabetically
+
+                  // Build the dropdown options
+                  var options = "";
+                  filteredSkills.forEach(function (jobSkill) {
+                    options +=
+                      "<option value='" +
+                      jobSkill +
+                      "'>" +
+                      jobSkill +
+                      "</option>";
+                  });
+
+                  // Update the dropdown options
+                  // jobSkillOptions.innerHTML = options; 
+                });
+                new MultiSelectTag('myDropdown', {
+    rounded: false,    // default true
+    shadow: true      // default false
+}) 
+              </script>
+                <label for="education"
+                  >3. What type of college degree does your job
+                  require? For example, write only "Business Administration" or "Accounting and Finance"</label
+                ><br />
+                <br />
+                <input
+                  type="text"
+                  id="education"
+                  name="education"
+                  placeholder = "Computer Science"
+                  required
+                />
+              </p>
+              <br />
+              <p>
+                <label for="skills"
+                  >4. List all the software skills you are looking for
+                  in a candidate. (For example: MS Excel, Tableau, Programming languages, etc.)
+                  Please seperate different skills with a comma (",").</label
+                ><br />
+                <textarea
+                  id="skills"
+                  name="skills"
+                  rows="4"
+                  cols="50"
+                  placeholder="For example, input skills like: UI/UX designer, MS Word, MS Excel, Python, JavaScript, ..."
+                  required
+                ></textarea>
+                <br />
+              </p>
+              <br />
+              <p>
+                <label for="competitors"
+                  >5. Please list any specific companies'/competitors' name for
+                  whom you want to search in the candidates' resume? Please
+                  seperate different company names with a comma (",").</label
+                ><br />
+                <input type="text" id="competitors" name="competitors" />
+                <br />
+              </p>
+              <label for="location"
+                  >6. What location do you want to search for? Please
+                  seperate different locations with a comma (",") </label
+                ><br />
+                <input
+                  type = "text"
+                  id="location"
+                  name="location"
+                  placeholder="For example, 'Agra'"
+                  required
+                />
+                <br />
+              </p>
+              <br />
+              <p>
+                <br />
+                <button class="button-35" type="submit">Submit</button>
+              </p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container-fluid">
+        {% include 'messages.html' %} {% if form %}
+            <center>
+        <button
+          type="button"
+          class="button-35"
+          role="button"
+          data-toggle="modal"
+          data-target="#exampleModal"
+          style="margin-top: 4%; margin-bottom: 2%; border-radius: 15px"
+        >
+          Add New Job Description
+        </button>
+
+      <form
+            id="ats_form"
+            method="POST"
+            action="{% url 'import_from_ATS' %}"
+            data-uid="{{ uid_val }}"
+          >
+            {% csrf_token %}
+        <button
+          type="button"
+          class="button-35"
+          role="button"
+          style="margin-top: 4%; margin-bottom: 2%; border-radius: 15px"
+          onclick="redirectToURL()"
+        >
+          Import from ATS
+        </button>
+        </form>
+            <div id="textboxContainer" style="display: None; width: 100%;">
+              <input type="text" class="textbox-container" id="link" placeholder="Enter link from redirected page"/>   <button type="button" class="button-35" id="LinkButton" role="button" onclick="submitLink()">
+                  <i class='fas fa-angle-right' style='font-size:20px;color:white'></i>
+                </button>
+            </div>
+          </center>
+          <script>
+              var uidVal = document.getElementById('ats_form').getAttribute('data-uid');
+  console.log(uidVal); 
+  
+  function redirectToURL() {
+    var textboxContainer = document.getElementById('textboxContainer');
+    textboxContainer.style.display = 'inline-block';
+    window.open('https://accounts.zoho.in/oauth/v2/auth?response_type=code&client_id=1000.KWR38CA8IIYFVYI3JU3J3234UCGA7O&scope=ZohoRecruit.modules.ALL,ZohoRecruit.settings.ALL,ZohoRecruit.users.ALL,ZohoRecruit.notifications.ALL,ZohoRecruit.org.ALL,ZohoRecruit.bulk.ALL&redirect_uri=https://blozum.com/&access_type=online', '_blank');// Replace with the desired URL
+  }
+
+      function submitLink() {
+        var link = document.getElementById('link').value;
+
+        // Redirect to the backend URL with the link value as a query parameter
+        window.location.href = '/ats_import/?link=' + encodeURIComponent(link) + '&uid=' + uidVal;
+      }
+          </script>
+      <div class="row">
+        <div class="col-lg-5 col-md-5"></div>
+        <div class="col-lg-6 col-md-6">
+          <form
+            method="POST"
+            enctype="multipart/form-data"
+            action="{% url 'homepage' %}?uid={{ uid_val }}"
+            style="margin-top: 2%; margin-bottom: 3%"
+          >
+            {% csrf_token %} {{ form|crispy }}
+            <br>
+            <button
+              type="submit"
+              id="import"
+              name="import"
+              class="button-35"
+              style="margin-top: 2%; border-radius: 15px"
+            >
+              Upload
+            </button>
+          </form>
+        </div>
+      </div>
+      {% elif resumes %}
+      <div class="row">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+          <a href="{% url 'homepage' %}?uid={{ uid_val }}">
+            <button
+              class="button-35"
+              style="margin-bottom: 10px; border-radius: 20"
+            >
+              Upload More
+            </button>
+          </a>
+        </div>
+      </div>
+      <!-- Button trigger modal -->
+<style>
+  .styled-table {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); 
+  border-collapse: collapse;
+  margin: 25px 0;
+  font-size: 0.9em;
+  font-family: sans-serif;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.styled-table thead tr {
+  background-color: #00000d;
+  color: #121212;
+  text-align: left;
+  widrh:100%;
+}
+
+.styled-table th,
+.styled-table td {
+  padding: 12px 15px;
+}
+
+.styled-table tbody tr td {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); 
+  text-overflow: ellipsis; 
+  overflow-x: hidden;
+}
+
+  
+  .styled-table tbody tr:nth-child(1) {
+    background-color: #90b89b; 
+    color: #000000;
+  }
+  
+  .styled-table tbody tr:nth-child(2) {
+    background-color: #abd2b6;
+    color: #000;
+  }
+  
+  .styled-table tbody tr:nth-child(3) {
+    background-color: #c9e7d2; 
+    color: #000;
+  }
+  
+  .styled-table tbody tr:nth-child(4) {
+    background-color: #dcf0e2; 
+    color: #000;
+  }
+    .styled-table tbody tr:nth-child(5) {
+    background-color: #e6f6eb; 
+    color: #000;
+  }
+
+
+
+
+      .button-53 {
+ align-items: center;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: transparent 0 0 0 6px, rgba(18, 18, 18, 0.5) 0 6px 20px;
+  box-sizing: border-box;
+  color: #00000d;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 1 1 auto;
+  font-family: Inter, sans-serif;
+  font-size: 1rem;
+  font-weight:450;
+  justify-content: center;
+  line-height: 1;
+  margin: 0;
+  outline: none;
+  padding: 15px;
+  text-align: center;
+  text-decoration: none;
+  transition: box-shadow 0.2s, -webkit-box-shadow 0.2s;
+  white-space: nowrap;
+  border: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+.button-53 tr {
+  padding: 15px;
+  white-space: nowrap;
+  text-align: center;
+  overflow-x: hidden;
+  width: 100%;
+}
+.button-53:hover {
+  box-shadow: #fff 0 0 0 3px, transparent 0 0 0 0;
+  background-color: #1484cd;
+  color: #fff;
+}
+.graphBox {
+  position: relative;
+  width: 100%;
+  padding:20px;
+  min-height: 200px;
+
+}
+.graphBox .box{
+  position: relative;
+  background: #fff;
+  padding: 20px;
+  width: 100%;
+  box-shadow: 0 7px 25px rgba(0,0,0,0.08);
+  border-radius:20px; 
+}
+
+</style>
+<div class="row" style="width:97vw;">
+  <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="width:97vw;"> 
+    <table class="styled-table" style="width:97vw;">
+      <tbody>
+        {% for resume in resumes %}
+        <tr class="button-53" style="width:98vw">
+          <td style="width: 10%;">
+            <a href="{{resume.resume.url}}" target="_blank">{{resume.resume.url|truncatechars:10}}</a>
+          </td>
+          <td style="width: 15%;">{{resume.name}}</td>
+          <td style="width: 45%;">{{resume.companies}}</td>
+          <td style="width: 30%;">{{resume.college}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="modal fade" id="resumeModal" tabindex="-1" aria-labelledby="resumeModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document" style="max-width: 800px; padding: 20px;
+box-shadow: 0 7px 25px rgba(0,0,0,0.08);
+  border-radius:20px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="resumeModalLabel"></h5>
+      </div>
+      <div class="modal-body">
+        <p id="resumeSummary"></p>
+        <p>Previous Companies: <span id="resumeCompanies"></span></p>
+        <p>College: <span id="resumeCollege"></span></p>
+        <button
+  class="button-35"
+  style="margin-bottom: 10px; border-radius: 20px;"
+  id="contact"
+>Contact Candidate</button>
+        <h6 id="contact_feature"></h6>
+        <div class="graphBox">
+          <div class="box">
+            <canvas id="myChart" style="display: block; box-sizing: border-box; height: 100%; width: 100%;"></canvas>
+          </div>
+        </div>
+        <a id="resumeLink" href="" target="_blank">View Resume</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
+<script type="module">
+  var resumeData = JSON.parse('{{ resumes_json|escapejs }}');
+  var rows = document.querySelectorAll('.button-53');
+  var modal = new bootstrap.Modal(document.getElementById('resumeModal'));
+  const title = document.getElementById('resumeModalLabel');
+  const summary = document.getElementById('resumeSummary');
+  const companies = document.getElementById('resumeCompanies');
+  const college = document.getElementById('resumeCollege');
+  const score = document.getElementById('resumeScore');
+  const link = document.getElementById('resumeLink');
+  const contact = document.getElementById('contact');
+  const cont = document.getElementById('contact_feature');
+  var email = ""
+  contact.addEventListener('click', () => {
+    cont.innerHTML = 'The email of the candiate: '+ email + '. The "Contact" feature is not available in the free demo. Please contact Tanmay from BlozumHR to customise this based on your specific needs. Thanks!';
+  if (Notification.permission === 'granted') {
+    new Notification('The email of the candiate: '+ email + '. The "Contact" feature is not available in the free demo. Please contact Tanmay from BlozumHR to customise this based on your specific needs. Thanks!');
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        new Notification('The email of the candiate: '+ email + '. The "Contact" feature is not available in the free demo. Please contact Tanmay from BlozumHR to customise this based on your specific needs. Thanks!');
+      }
+    });
+  }
+});
+  rows.forEach((row, index) => {
+    row.addEventListener('click', () => {
+      title.innerHTML = resumeData[index].name;
+      summary.innerHTML = resumeData[index].summary;
+      companies.innerHTML = resumeData[index].companies;
+      college.innerHTML = resumeData[index].college;
+      email = resumeData[index].email;
+      link.href = resumeData[index].resume_url;
+      var oldChart = Chart.getChart("myChart");
+      if (oldChart) {
+        oldChart.destroy();
+      }
+      var ctx = document.getElementById('myChart').getContext('2d');
+      var score = resumeData[index].score;
+      if (typeof score === 'object') {score = JSON.stringify(score);}
+      score = score.replace(/'/g, '"');
+      score = JSON.parse(score);
+      var myChart = new Chart(ctx, {
+        type: 'polarArea',
+        data: {
+/*            labels: [
+                
+              ],*/
+              labels: [
+"Required JD Skills",
+"Candidate Location",
+                "Last Company Rating",
+                "Previous Company Domains",
+                "Your Competitors",
+                "College Rank",
+                "College Degree Relevance",
+                "Skill Relevance to Job"
+  ],
+  datasets: [{
+    label: 'Score',
+    data: [score["Required JD Skills"], score["Candidate Location"], score["Last Company Rating"], score["Previous Company Domains"], score["Your Competitors"],score["College Rank"], score["College Degree Relevance"], score["Skill Relevance to Job"]],
+    backgroundColor: [
+          '#5865f2',
+          '#57f287',
+          '#fee75c',
+          '#eb459e',
+          '#ed4245',
+          '#9e9e9e',
+          '#000000'
+    ]
+  }]
+        },
+        options: {
+          responsive: true,
+        }
+      });
+          modal.show();
+        });
+      });
+      $(document).keyup(function(e) {
+    if (e.key === "Escape") {
+      $('.modal').removeClass('modal-show');
+      $('.content').removeClass('content-blurred');
+      $('body').removeClass('no-scroll');
+    }
+  });
+      // Open & close modal
+    $('.modal-toggle').click(function(){
+      $('.modal').toggleClass('modal-show');
+      $('.content').toggleClass('content-blurred');
+      $('body').toggleClass('no-scroll');
+    });
+    </script>
+    {% endif %}
+  </body>
+</html>

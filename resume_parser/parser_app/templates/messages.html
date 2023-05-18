@@ -1,0 +1,11 @@
+{% if messages %}
+<div class="messages" style="margin-top: 2%;">
+    {% for message in messages %}
+    <div {% if message.tags == 'error' %} class="alert alert-danger"  style="background-color: #76b8ff; color: #001c3b" {% else %} class="alert alert-{{ message.tags }} "  style="background-color: #76b8ff; color: #001c3b" {% endif %}>
+        {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Important: {% endif %}
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
