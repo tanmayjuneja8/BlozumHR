@@ -14,5 +14,4 @@ We did this to evaluate the candidate solely based on the job description. We bu
 
 We had to take the server down due to the high AWS costs of keeping it running. If you're interested in learning how to make it work, please reach out to me on tanmay.juneja@blozum.com or open an issue. I will gladly tell you how to use it for your benefit. :)
 
-Cheers,
-Tanmay
+Cheers!
