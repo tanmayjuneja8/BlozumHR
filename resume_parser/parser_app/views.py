@@ -1,6 +1,8 @@
+## 1 hr Zoho runout, ChatGPT API error : Save data
+
 from django.shortcuts import render, redirect
 import xml.etree.ElementTree as ET
-import re
+import re, PyPDF2
 import firebase_admin
 from firebase_admin import firestore, credentials
 from resume_parser import utils
@@ -11,11 +13,13 @@ from django.forms.models import model_to_dict
 import os, re
 import time, json
 import requests
-
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.vectorstores import FAISS
 import pandas as pd
 
 from resume_parser.resume_parser import ResumeParser
-from .models import Resume, UploadResumeModelForm
+from .models import Resume, Resume2, UploadResumeModelForm, SingleResumeForm
 from django.contrib import messages
 from django.conf import settings
 from django.db import IntegrityError
@@ -25,6 +29,7 @@ import openai
 from dotenv import load_dotenv
 from django.http import JsonResponse
 from urllib.parse import urlparse, parse_qs
+import tiktoken
 
 
 load_dotenv()
@@ -203,6 +208,7 @@ def postsignUp(request):
 
 def jd_form(request):
     form = UploadResumeModelForm()
+    single_resume_form = SingleResumeForm()
     uid123 = request.GET.get("uid") or request.POST.get("uid")
     if request.method == "POST":
         company_type = request.POST.getlist("myDropdown[]")
@@ -256,11 +262,15 @@ def jd_form(request):
         return render(
             request,
             "base.html",
-            {"form": form, "uid_val": uid123},
+            {"form": form, "single_resume_form": single_resume_form, "uid_val": uid123},
         )
     else:
         # Render the form
-        render(request, "base.html", {"uid_val": uid123})
+        render(
+            request,
+            "base.html",
+            {"uid_val": uid123, "single_resume_form": single_resume_form, "form": form},
+        )
 
 
 def extract_email(text):
@@ -277,12 +287,43 @@ def extract_email(text):
             return None
 
 
+def num_tokens(text: str, model: str = "gpt-3.5-turbo") -> int:
+    """Return the number of tokens in a string."""
+    encoding = tiktoken.encoding_for_model(model)
+    return len(encoding.encode(text))
+
+
+class CustomException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 def import_from_ATS(request, *args):
     uid12 = request.GET.get("uid") or request.POST.get("uid")
     for arg in args:
         uid12 = arg
-    if request.method == "GET":
-        link = request.GET.get("link")
+    if request.method == "POST":
+        Resume2.objects.all().delete()
+        form = SingleResumeForm(request.POST, request.FILES)
+        if form.is_valid():
+            resume_file = form.cleaned_data["resume"]
+            link = form.cleaned_data["link"]
+
+            with open(
+                "/Users/tanmayjuneja/Documents/blozumhr/BlozumHR/resume_parser/mediafiles/resumes/resume.pdf",
+                "wb",
+            ) as f:
+                for chunk in resume_file.chunks():
+                    f.write(chunk)
+
+            # Extract text from the saved PDF file
+            pdf_path = "/Users/tanmayjuneja/Documents/blozumhr/BlozumHR/resume_parser/mediafiles/resumes/resume.pdf"
+            text = utils.extract_text(pdf_path, os.path.splitext(pdf_path)[1])
+            pattern = r"[^\w\d\s\n\+\.\,\:\%\/\$\-\–\—\―\(\)\{\}\[\]\@\#\'\"\>\<\`]"
+            stellar_candidate_resume = re.sub(pattern, "", text)
+        else:
+            link = form.cleaned_data["link"]
+
         parsed_url = urlparse(link)
         query_params = parse_qs(parsed_url.query)
         code_value = query_params.get("code", [""])[0]
@@ -293,8 +334,8 @@ def import_from_ATS(request, *args):
         if response1.status_code == 200:
             json_auth = str(response1.json())
             json_auth = json_auth.replace("'", '"')
-            data = json.loads(json_auth)
-            access_token = data.get("access_token")
+            data123 = json.loads(json_auth)
+            access_token = data123.get("access_token")
             if access_token is None:
                 messages.warning(
                     request,
@@ -308,14 +349,10 @@ def import_from_ATS(request, *args):
                 "Could not authenticate your Zoho Recruit account. Please carefully paste the authorisation link in under 60 seconds after it appears.",
             )
             return homepage(request, uid12)
-
         domain_comp = domain.get_domain_companies()
         title = job_title.get_title()
         degree = coll_rank.get_college_tier()
-        location = loc12.get_loc()
-        skills = job_skills12.get_skills()
         company_tags = comp_tags.get_company_type()
-        print(access_token)
         # Candidate Information
         urls = "https://recruit.zoho.com/recruit/v2/Candidates"
         headers = {"Authorization": f"Zoho-oauthtoken {access_token}"}
@@ -352,24 +389,71 @@ def import_from_ATS(request, *args):
         ########################################################################
         # CV ki info extract karlo.
         ########################################################################
-        if len(cand_attachments) != 0:
-            ref = db.collection("Users").document(uid12)
-            credits = ref.get().to_dict()["credits"]
-            if credits < len(cand_attachments):
-                messages.warning(
-                    request,
-                    "You have lesser number of credits left. Please recharge!",
-                )
-            if credits >= len(cand_attachments):
-                credits -= len(cand_attachments)
-                print("Credits reduced.")
-                ref.update(
-                    {
-                        "credits": credits,
-                    }
-                )
+        print(len(cand_attachments))
+        try:
+            if len(cand_attachments) != 0:
+                ref = db.collection("Users").document(uid12)
+                credits = ref.get().to_dict()["credits"]
+                if credits < len(cand_attachments):
+                    raise CustomException(
+                        "You have lesser number of credits left. Please recharge and sign in again after recharging!"
+                    )
+                if credits >= len(cand_attachments):
+                    final_cred_count = len(cand_attachments)
+                    final_cred_count += 2
+                    credits = credits - final_cred_count
+                    print("Credits reduced.")
+                    ref.update(
+                        {
+                            "credits": credits,
+                        }
+                    )
+        except CustomException as e:
+            messages.warning(
+                request,
+                e.message,
+            )
+            return redirect("homepage")
         resumes_list = []
-        j = 0
+        joker = 0
+
+        ## stellar_candidate_resume embeddings
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        if title == None or degree == None:
+            text_to_include = "Give a summary of all of the candidates' skills and competencies based on the info provided in their resume below"
+        else:
+            text_to_include = f"Give a summary of all of the candidates' skills and competencies related to the field of {title} or {degree} based on their resume below"
+
+        prompt = f"""
+        Imagine you are an experienced HR Recruiter named BlozumHR. Answer the following question according to the text below regarding a job candidate (delimited by ```). Don't give any explanations for your answers. Don't give 'None' multiple times in an answer.
+
+        {text_to_include}. Don't include any organization's name or their educational background. (company, college, school name, etc.)
+            
+            ```
+            {stellar_candidate_resume}
+            ```
+            """
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.9,
+        )
+        data111 = completion.choices[0].message.content
+        data111 = str(data111)
+
+        text_splitter = CharacterTextSplitter(
+            separator=".",
+            chunk_size=2500,
+            chunk_overlap=200,
+            length_function=len,
+        )
+        docs = text_splitter.split_text(data111)
+        embeddings = OpenAIEmbeddings()
+        db12 = FAISS.from_texts(docs, embeddings)
+        # docs = db.similarity_search(query)
+        # print(docs)
+
+        ############################################################################
         for i in cand_attachments:
             # College, Company Names
             ########### This also has some information about their past experiences extracted from their CVs.
@@ -383,6 +467,58 @@ def import_from_ATS(request, *args):
                 "College Degree Relevance": 0,
                 "Skill Relevance to Job": 0,
             }
+
+            urls = f"https://recruit.zoho.com/recruit/v2/Candidates/{i}/Attachments/{cand_attachments[i]}"
+            headers = {"Authorization": f"Zoho-oauthtoken {access_token}"}
+            response = requests.get(urls, headers=headers)
+            # Check the response
+            if response.status_code == 200:
+                pdf_path = os.path.join(os.getcwd(), "resume.pdf")
+                with open(pdf_path, "wb") as file:
+                    file.write(response.content)
+                ## Resume text pre-processing and saving information for each candidate.
+                text = utils.extract_text(pdf_path, os.path.splitext(pdf_path)[1])
+                pattern = r"[^\w\d\s\n\+\.\,\:\%\/\$\-\–\—\―\(\)\{\}\[\]\@\#\'\"\>\<\`]"
+                text = re.sub(pattern, "", text)
+                print("Yahana tak aagaya bhai.")
+                # 8. If Yes/Maybe : Is the role of "{title}" higher than the candidate's last job designation (first job designation found in text) in terms of hierarchy in an organization? Answer in only Yes/No.
+
+                openai.api_key = os.getenv("OPENAI_API_KEY")
+                prompt = f"""Imagine you are an experienced HR Recruiter named BlozumHR. Answer the following questions according to the text below regarding a job candidate (delimited by ```). Answer only "None" if no answer is found in the questions below. Don't give any explanations for your answers. Don't give 'None' multiple times in an answer.
+            
+            1. Extract all of the candidate's previous jobs' company names seperated by commas (","). Please exclude candidate's university/school/college names and include only company names. Also, give the names in descending order, that is, include the candidate's last company name first. Do not include any college/school names, include only companies' names where they have previously worked. 
+            2. Which colleges (exact university/institute name) has the candidate graduated from? Don't include their school's name, include only colleges where they completed some degrees. 
+            Give different institutions separated by ";". Give them in descending order, i.e., include the most recent college first. For example, "IIT Delhi; IIM Ahmedabad; Harvard" should be the only output.
+            3. What are all the skills and competencies of the candidate? Read all of their resume and give a detailed summary of the candidates' skills and competencies related to the field of {title} or {degree}. 
+            4. Is the candidate's profile related to the role of "{title}"? Answer only in Yes/No.
+            5. Does the candidate have a degree in {degree} or related field? Answer only Yes/No according to your judgement.
+            6. Answer in Yes/No/Maybe : Are any of the candidate's previous job/internship designations related to the role of "{title}"?
+            ```
+            {text}
+            ```
+            """
+
+                completion = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.9,
+                )
+                os.remove(pdf_path)
+                data = completion.choices[0].message.content
+                data = str(data)
+                print(data)
+                point = data.split("\n")
+                str_comp = point[0][3:]
+                chatgpt_companies = str_comp.split(",")
+                chatgpt_companies_final = []
+                for company_name in chatgpt_companies:
+                    company_name = company_name.replace(",", " ")
+                    chatgpt_companies_final.append(company_name.strip())
+
+                time.sleep(20)
+
+            else:
+                print("Request failed with status code:", response.json())
 
             urls = f"https://recruit.zoho.com/recruit/private/xml/Candidates/getTabularRecords?authtoken={access_token}&id={i}&tabularNames=(Experience Details,Educational Details)&scope=recruitapi"
             headers = {"Authorization": f"Zoho-oauthtoken {access_token}"}
@@ -402,9 +538,31 @@ def import_from_ATS(request, *args):
                 df = pd.read_csv(
                     "/Users/tanmayjuneja/Documents/blozumhr/BlozumHR/resume_parser/parser_app/List_of_companies_in_India.csv"
                 )
+                str123 = point[1][3:]
+                str123 = str123.replace(",", "")
+                college_names.extend(str123.split(";"))
+                # college_names = [
+                #     str(college) for college in college_names
+                # ]  # Convert elements to strings
+                college_names = list(set(college_names))
+
+                experience_details = root.find(".//FL[@val='Experience Details']")
+                for tr in experience_details.findall("TR"):
+                    company = tr.find("TL[@val='Company']")
+                    if company is not None and company.text is not None:
+                        company.text = company.text.replace(",", "")
+                        chatgpt_companies_final.append(company.text)
+
+                chatgpt_companies_final = list(set(chatgpt_companies_final))
+                for i in college_names:
+                    for j in range(len(chatgpt_companies_final)):
+                        if i == chatgpt_companies_final[j]:
+                            chatgpt_companies_final[j] = None
+
                 for college_name in college_names:
                     if college_name is None:
                         continue
+                    college_name = college_name.replace(",", "")
                     if college_name.lower() in df["name"].tolist():
                         filtered_data = df.loc[
                             df["name"] == college_name.lower()
@@ -413,24 +571,17 @@ def import_from_ATS(request, *args):
                             rating = filtered_data.item()
                             cand_score["College Rank"] += 300 - int(rating)
                         else:
+                            print("Filtered data #########################")
                             print(filtered_data)
 
-                company_names = []
-                experience_details = root.find(".//FL[@val='Experience Details']")
-                for tr in experience_details.findall("TR"):
-                    company = tr.find("TL[@val='Company']")
-                    if company is not None and company.text is not None:
-                        company.text = company.text.replace(",", "")
-                        company_names.append(company.text)
-
                 arr = []
-                for i in range(len(company_names)):
-                    comp_name = company_names[i]
+                for i in range(len(chatgpt_companies_final)):
+                    comp_name = chatgpt_companies_final[i]
                     if comp_name is None:
                         continue
                     comp_name = comp_name.split(" ")
-                    if company_names[i].lower() in df["name"].tolist():
-                        df3 = df[df["name"] == company_names[i].lower()]
+                    if chatgpt_companies_final[i].lower() in df["name"].tolist():
+                        df3 = df[df["name"] == chatgpt_companies_final[i].lower()]
                         ## last work experience ka score
                         if i == 0:
                             cand_score["Last Company Rating"] += int(
@@ -456,12 +607,14 @@ def import_from_ATS(request, *args):
                                     arr.append(k.strip())
                             continue
                         if df2.shape[0] > 1:
+                            print(df2)
                             final_df = df2[
                                 df2["name"].apply(
                                     lambda x: len(x.split()) > 1
                                     and x.split()[1] == comp_name[1].lower()
                                 )
                             ]
+                            print(final_df)
                             if not final_df.empty:
                                 ## last work experience ka score
                                 if i == 0:
@@ -497,28 +650,60 @@ def import_from_ATS(request, *args):
                         )
 
                 ## Check competitors and add to the score.
+                print(chatgpt_companies_final)
                 if domain_comp is not None:
                     for i in range(len(domain_comp)):
                         competitor = domain_comp[i]
-                        for k in company_names:
+                        for k in chatgpt_companies_final:
+                            if k == None:
+                                continue
                             if k.strip().lower() == competitor.strip().lower():
                                 cand_score["Your Competitors"] += 200
+
+                # 5. Yes/No/None (Is it relevant to JD college degree?)
+                if "Yes" in point[4][3:]:
+                    cand_score["College Degree Relevance"] += 100
+
+                if "Yes" in point[3][3:]:
+                    cand_score["Skill Relevance to Job"] += 100
+                    if "Yes" or "Maybe" in point[5][3:]:
+                        cand_score["Skill Relevance to Job"] += 50
+                else:
+                    if "Yes" or "Maybe" in point[5][3:]:
+                        cand_score["Skill Relevance to Job"] += 20
+
+                ## Compare skills
+                # (skills) Product design/launch, consumer immersions, user journey mapping, requirements gathering, UX design, PRD preparation, digital transformation evaluation, product ownership, ideation, pricing strategy
+                skills_from_jd = job_skills12.get_skills()
+                skills_from_gpt = point[2][3:].lower()
+                docs_and_scores = db12.similarity_search_with_score(point[2][3:])
+                cand_score["Skill Relevance to Job"] += 100 * float(
+                    docs_and_scores[0][1]
+                )
+                if skills_from_jd is not None:
+                    for skill in skills_from_jd:
+                        skill = skill.strip()
+                        if skill in skills_from_gpt:
+                            cand_score["Required JD Skills"] += 20
+
+                summary = point[2][3:]
+                cand_summaries[joker] = summary
 
                 total = -1 * sum(cand_score.values())
                 resumes_list.append(
                     {
-                        "name": cand_names[j],
-                        "companies": company_names,
+                        "name": cand_names[joker],
+                        "companies": chatgpt_companies_final,
                         "college": college_names,
-                        "summary": cand_summaries[j],
-                        "experience": cand_experiences[j],
+                        "summary": cand_summaries[joker],
+                        "experience": cand_experiences[joker],
                         "score": cand_score,
-                        "email": str(cand_emails[j]),
+                        "email": str(cand_emails[joker]),
                         "total_score": total,
                     }
                 )
-                if j < len(cand_attachments):
-                    j += 1
+                if joker < len(cand_attachments):
+                    joker += 1
 
             else:
                 print("Request failed with status code:", response.json())
@@ -527,7 +712,6 @@ def import_from_ATS(request, *args):
         resumes_list.sort(key=lambda x: x["total_score"])
         for resume in resumes_list:
             del resume["total_score"]
-        print(resumes_list)
         resumes_json = json.dumps(resumes_list)
 
         context = {
@@ -536,58 +720,20 @@ def import_from_ATS(request, *args):
             "resumes_json": resumes_json,
         }
 
-        #     urls = f"https://recruit.zoho.com/recruit/v2/Candidates/{i}/Attachments/{cand_attachments[i]}"
-        #     headers = {"Authorization": f"Zoho-oauthtoken {access_token}"}
-        #     response = requests.get(urls, headers=headers)
-        #     # Check the response
-        #     if response.status_code == 200:
-        #         pdf_path = os.path.join(os.getcwd(), "resume.pdf")
-        #         with open(pdf_path, "wb") as file:
-        #             file.write(response.content)
-        #         ## Resume text pre-processing and saving information for each candidate.
-        #         text = utils.extract_text(pdf_path, os.path.splitext(pdf_path)[1])
-        #         pattern = r"[^\w\d\s\n\+\.\,\:\%\/\$\-\–\—\―\(\)\{\}\[\]\@\#\'\"\>\<\`]"
-        #         text = re.sub(pattern, "", text)
-
-        # 1. What are all the skills and competencies of the candidate?
-        # 2. Is the candidate's profile related to the role of "{title}"? Answer only in Yes/No.
-        # 3. Does the candidate have a degree in {degree} or related field? Answer only Yes/No according to your judgement.
-        # 7. Answer in Yes/No/Maybe : Are any of the candidate's previous job/internship designations related to the role of "{title}"?
-        # 8. If Yes/Maybe : Is the role of "{title}" higher than the candidate's last job designation (first job designation found in text) in terms of hierarchy in an organization? Answer in only Yes/No.
-
-        #             openai.api_key = os.getenv("OPENAI_API_KEY")
-        #             prompt = f"""Imagine you are an HR Recruiter named BlozumHR. Answer the following questions according to the text below regarding a job candidate (delimited by '''). Answer only "None" if no answer is found in the questions below. Be concise, answer short, and don't give any explanations for your answers.
-
-        # 1. Extract all of the candidate's previous jobs' company names. Please exclude university/college names and include only company (startup/organization names).
-        # 2. Which colleges (exact university/institute name) has the candidate graduated from?
-        # Give different institutions separated by ";". For example, "IIT Delhi; IIM Ahmedabad; Harvard" should be the only output.
-
-        # '''{text}'''
-        # """
-
-        # completion = openai.ChatCompletion.create(
-        #     model="gpt-3.5-turbo",
-        #     messages=[{"role": "user", "content": prompt}],
-        # )
-        # print(completion)
-        #     os.remove(pdf_path)
-
-        #     print("Request successful!")
-        # else:
-        #     print("Request failed with status code:", response.json())
-
-        ########################################################################
-
-    #  return render(request, "base.html", context)
-
     else:
         form = UploadResumeModelForm()
-        return render(request, "base.html", {"form": form, "uid_val": uid12})
+        single_resume_form = SingleResumeForm()
+        return render(
+            request,
+            "base.html",
+            {"form": form, "single_resume_form": single_resume_form, "uid_val": uid12},
+        )
     return render(request, "base.html", context)
 
 
 def homepage(request, *args):
     form = UploadResumeModelForm()
+    single_resume_form = SingleResumeForm()
     uid12 = request.GET.get("uid") or request.POST.get("uid")
     for arg in args:
         uid12 = arg
@@ -595,20 +741,27 @@ def homepage(request, *args):
         Resume.objects.all().delete()
         file_form = UploadResumeModelForm(request.POST, request.FILES)
         files = request.FILES.getlist("resume")
-        if len(files) != 0:
-            ref = db.collection("Users").document(uid12)
-            credits = ref.get().to_dict()["credits"]
-            if credits < len(files):
-                messages.warning(
-                    request, "You have lesser number of credits left. Please recharge!"
-                )
-            if credits >= len(files):
-                credits -= len(files)
-                ref.update(
-                    {
-                        "credits": credits,
-                    }
-                )
+        try:
+            if len(files) != 0:
+                ref = db.collection("Users").document(uid12)
+                credits = ref.get().to_dict()["credits"]
+                if credits < len(files):
+                    raise CustomException(
+                        "You have lesser number of credits left. Please recharge and sign in again after recharging!"
+                    )
+                if credits >= len(files):
+                    credits -= len(files)
+                    ref.update(
+                        {
+                            "credits": credits,
+                        }
+                    )
+        except CustomException as e:
+            messages.warning(
+                request,
+                e.message,
+            )
+            return redirect("homepage")
 
         # resumes_data = []
         if file_form.is_valid():
@@ -636,8 +789,9 @@ def homepage(request, *args):
                     # abcdef = parser.get_resume_text()
                     # sentences = Sentence(abcdef)
                     # tagger2.predict(sentences)
-
+                    time.sleep(20)
                     openai.api_key = os.getenv("OPENAI_API_KEY")
+                    print("Arey ye to idhar aagaya vaiii")
                     ## Enter ChatGPT
                     prompt = f"""Imagine you are an HR Recruiter named BlozumHR. Answer the following questions according to the text below regarding a job candidate. Answer only "None" if no answer is found in the questions below. Be concise, answer short, and don't give any explanations for your answers.
 
@@ -652,14 +806,11 @@ Give different institutions separated by ";". For example, "IIT Delhi; IIM Ahmed
 8. Answer in Yes/No/Maybe : Are any of the candidate's previous job/internship designations related to the role of "{title}"? 
 9. If Yes/Maybe : Is the role of "{title}" higher than the candidate's last job designation (first job designation found in text) in terms of hierarchy in an organization? Answer in only Yes/No.
 
-
-
-
-
+```
 """
 
                     text = parser.get_resume_text()
-                    prompt += text
+                    prompt += text + "\n" + "```"
 
                     completion = openai.ChatCompletion.create(
                         model="gpt-3.5-turbo",
@@ -669,8 +820,6 @@ Give different institutions separated by ";". For example, "IIT Delhi; IIM Ahmed
                     end = time.time()
                     data = completion.choices[0].message.content
                     data = str(data)
-                    print(f'{completion["usage"]["total_tokens"]} prompt tokens used.')
-                    print(completion)
 
                     ## Extract from ChatGPT outputs.
                     point = data.split("\n")
@@ -853,8 +1002,13 @@ Give different institutions separated by ";". For example, "IIT Delhi; IIM Ahmed
             return render(request, "base.html", context)
     else:
         form = UploadResumeModelForm()
+        single_resume_form = SingleResumeForm()
     messages.success(
         request,
         "You've signed in. Welcome! ✨",
     )
-    return render(request, "base.html", {"form": form, "uid_val": uid12})
+    return render(
+        request,
+        "base.html",
+        {"form": form, "single_resume_form": single_resume_form, "uid_val": uid12},
+    )

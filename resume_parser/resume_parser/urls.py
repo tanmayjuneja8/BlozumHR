@@ -28,5 +28,5 @@ urlpatterns = [
     path("tanmayjuneja801/", views.signUp, name="signup"),
     path("logout/", views.logout, name="log"),
     path("postsignUp/", views.postsignUp),
-    path("ats_import/", views.import_from_ATS, name="import_from_ATS"),
+    path("import_from_ats/", views.import_from_ATS, name="import_from_ATS"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

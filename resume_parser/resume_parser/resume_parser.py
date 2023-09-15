@@ -26,7 +26,6 @@ class ResumeParser(object):
 
         text = self.__text.lower()
         found1 = 0
-        print(candidate_location)
         if candidate_location != None:
             for i in candidate_location:
                 cand_loc = i.strip().lower()
@@ -37,14 +36,16 @@ class ResumeParser(object):
         # check skills here?
         tokens = text.split()
         found = 0
-        for skill in skills_from_jd:
-            escaped_skill = re.escape(skill)
-            if len(escaped_skill.split()) == 1:
-                if escaped_skill in tokens:
-                    found += 100
-            if len(escaped_skill.split()) > 1:
-                if re.search(escaped_skill, text):
-                    found += 100
+
+        if skills_from_jd is not None:
+            for skill in skills_from_jd:
+                escaped_skill = re.escape(skill)
+                if len(escaped_skill.split()) == 1:
+                    if escaped_skill in tokens:
+                        found += 100
+                if len(escaped_skill.split()) > 1:
+                    if re.search(escaped_skill, text):
+                        found += 100
 
         self.__score = {
             "Required JD Skills": found,

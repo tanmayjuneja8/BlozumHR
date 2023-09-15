@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "crispy_forms",
     "parser_app",
-    # "bootstrap4",
+    "bootstrap4",
 ]
 
 MIDDLEWARE = [
@@ -124,7 +124,7 @@ STATIC_URL = "/staticfiles/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Bootstrap Crispy-Forms config
-# CRISPY_TEMPLATE_PACK = "bootstrap4"
+CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 # for uploading resume files
 MEDIA_ROOT = os.path.join(

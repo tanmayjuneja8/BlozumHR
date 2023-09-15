@@ -24,7 +24,7 @@ def extract_text_from_pdf(pdf_path):
             resource_manager = PDFResourceManager()
             fake_file_handle = io.StringIO()
             converter = TextConverter(
-                resource_manager, fake_file_handle, codec="utf-8", laparams=LAParams()
+                resource_manager, fake_file_handle, laparams=LAParams()
             )
             page_interpreter = PDFPageInterpreter(resource_manager, converter)
             page_interpreter.process_page(page)
